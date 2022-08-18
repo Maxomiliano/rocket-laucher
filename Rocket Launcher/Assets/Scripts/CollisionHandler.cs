@@ -10,15 +10,44 @@ public class CollisionHandler : MonoBehaviour
     [SerializeField] AudioClip crashSFX;
     [SerializeField] AudioClip successSFX;
 
+    [SerializeField] ParticleSystem crashParticle;
+    [SerializeField] ParticleSystem successParticle;
+
     AudioSource audioSource;
+    
+
+    bool isTransitioning = false;
+    bool collisionDisabled = false;
 
     private void Start()
     {
         audioSource = GetComponent<AudioSource>();
     }
+    void Update()
+    {
+        RespondToDebugKeys();   
+    }
+
+    void RespondToDebugKeys()
+    {
+        if(Input.GetKey(KeyCode.L))
+        {
+            LoadNextLevel();
+        }
+
+        else if(Input.GetKey(KeyCode.C))
+        {
+            collisionDisabled = !collisionDisabled; //toggle collision
+        }
+    }
 
     void OnCollisionEnter(Collision other)
     {
+        if(isTransitioning || collisionDisabled)
+        {
+            return;
+        }
+
         switch (other.gameObject.tag)
         {
             case "Friendly":
@@ -34,16 +63,23 @@ public class CollisionHandler : MonoBehaviour
 
     void StartCrashSequence()
     {
+        isTransitioning = true;
+        audioSource.Stop();
         GetComponent<Movement>().enabled = false;
         Invoke("ReloadLevel", levelLoadDelay);
         audioSource.PlayOneShot(crashSFX);
+        crashParticle.Play();
     }
 
     void StartSuccessSequence()
     {
+        isTransitioning = true;
+        audioSource.Stop();
         GetComponent<Movement>().enabled = false;
         Invoke("LoadNextLevel", nextSceneDelay);
         audioSource.PlayOneShot(successSFX);
+        successParticle.Play();
+                      
     }
     
     void ReloadLevel()
